@@ -1,8 +1,14 @@
 # Upgrade guide
 
 - [Upgrading to 1.1.0 from 1.0.7](#upgrade-1.1.0)
+- [Upgrading to 1.2.0 from 1.1.11](#upgrade-1.2.0)
 
 <a name="upgrade-1.1.0"></a>
 ## Upgrading To 1.1.0
 
 Plugin requires OctoberCMS build 420+ with Laravel 5.5 and PHP >=7.0.
+
+<a name="upgrade-1.2.0"></a>
+## Upgrading To 1.2.0
+
+Parameters for `seo.beforeComponentRender` event were changed. Now the first parameter is `$component` itself. You can access it `seoTag` property as in example in **README**. The second parameter is the `$page` variable.

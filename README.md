@@ -165,8 +165,13 @@ Model fields are saved to database, so you must add columns to `renatio_seomanag
 Plugin will fire `seo.beforeComponentRender` event to allow for extensibility. This can be used to access page with associated SEO Tag.
 
 ```
-Event::listen('seo.beforeComponentRender', function ($page, $seoTag) {
-    // do custom logic here
+/*
+ * Assign new seoTag for product page
+ */
+Event::listen('seo.beforeComponentRender', function ($component, $page) {
+    if ($page->url == '/products/:slug') {
+        $component->seoTag = $page->controller->vars['product']->seo_tag;
+    }
 });
 ```
 

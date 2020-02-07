@@ -4,7 +4,7 @@ Plugin adds SEO functionality to [OctoberCMS](http://octobercms.com). It support
 
 ## Features
 * Support for CMS Pages, RainLab.Pages, RainLab.Blog
-* Import default values from CMS Pages, RainLab.Pages, RainLab.Blog with one click
+* Import default values from CMS Pages, RainLab.Pages, RainLab.Blog
 * Open Graph support
 * Robots meta configuration
 * Canonical URLs
@@ -13,19 +13,10 @@ Plugin adds SEO functionality to [OctoberCMS](http://octobercms.com). It support
 * Easy integration with other plugins
 
 ## Future plans
-* RainLab.Translate Plugin support (read more below)
 * Favicon Generator
 * Google snippet preview
 * Focus keywords check
 * Page analysis
-
-## Known issues
-
-### RainLab.Translate Plugin Support
-
-RainLab.Translate Plugin does not support CMS Pages at the moment. It also lacks support for polymorphic relations in OctoberCMS models (in fact no relations are supported). SEO Manager is built with RainLab.Translate Plugin in mind, but with current state of this plugin, it does not provide the clean solution for multilingual support out of the box. In current build it has only support for RainLab.Pages Plugin.
-
-> Read documentation section called **Multilingual Support Solution** for possible solution.
 
 ## Support
 
@@ -67,11 +58,7 @@ You can enable/disable Open Graph tags output, specify Open Graph site name and 
 
 You can edit robots.txt file and .htaccess file.
 
-> Editing .htaccess file may break your site if not set up properly, so proceed with caution.
-
-### Import
-
-Plugin allows to import default meta title and meta description from CMS Pages, RainLab.Pages and RainLab.Blog records with one click. In backend area go to *Settings -> SEO -> Import SEO*.
+> Editing .htaccess file may break your site if not set up properly, so proceed with caution. This can be restricted by setting user permission.
 
 ## SEO fields
 
@@ -175,12 +162,12 @@ Event::listen('seo.beforeComponentRender', function ($component, $page) {
 });
 ```
 
-## Multilingual Support Solution
+## Console commands
 
-To display SEO tags in different languages you must overwrite default component partial. In your theme `partials` folder create `seotags` folder. If you used different alias than default for component you must rename `seotags` folder to match your alias. Now copy/paste file from `/plugins/renatio/seomanager/components/seotags/default.htm`. Use translate filter `|_` to translate tags displayed on page render
+Plugin will create three new artisan commands for working with console.
 
-```
-<title>{{ meta_title|_ }}</title>
-```
+**seo:import-cms** command will import SEO from CMS pages.
 
-Refresh website on page that SEO Tags you want to translate. Now go to *Settings -> Translate -> Translate Messages* and Scan for new messages.
+**seo:import-static** command will import SEO from RainLab Static pages.
+
+**seo:import-blog** command will import SEO from RainLab Blog posts and categories.

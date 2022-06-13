@@ -1,12 +1,12 @@
 # Renatio SEO Manager Plugin
 
-Plugin adds SEO functionality to [OctoberCMS](http://octobercms.com). It supports CMS Pages, RainLab.Pages, RainLab.Blog out of the box. With one line of code can be attached to any OctoberCMS model. One robust solution for all your SEO needs.
-
-> This plugin is fully compatible with the latest version of OctoberCMS 2.x from version 2.0.1.
-
-> The latest version that supports OctoberCMS 1.x is version 1.3.4.
+Plugin adds SEO functionality to [October CMS](http://octobercms.com). It supports CMS Pages, RainLab.Pages,
+RainLab.Blog, October CMS Tailor
+out of the box. With one line of code can be attached to any October CMS model. One robust solution for all your SEO
+needs.
 
 ## Features
+
 * Support for CMS Pages, RainLab.Pages, RainLab.Blog
 * Import default values from CMS Pages, RainLab.Pages, RainLab.Blog
 * Open Graph support
@@ -16,14 +16,22 @@ Plugin adds SEO functionality to [OctoberCMS](http://octobercms.com). It support
 * Easy edit robots.txt and .htaccess in CMS Settings
 * Easy integration with other plugins
 * Fully compatible with RainLab.Translate for multi-lingual support
+* Fully support for October CMS Tailor
 
 ## Why is this a paid plugin?
 
-Something that is free has little or no perceived value. Users do not commit to free products and only use them until something else looks nice and is free comes along. When I invest my time in the development of a new plugin I commit to supporting and maintaining it. I ask my customers to do the same. I do not make money from this plugin by advertisements, upgrades or additional services like hosting or setup.
+Something that is free has little or no perceived value. Users do not commit to free products and only use them until
+something else looks nice and is free comes along. When I invest my time in the development of a new plugin I commit to
+supporting and maintaining it. I ask my customers to do the same. I do not make money from this plugin by
+advertisements, upgrades or additional services like hosting or setup.
 
 Did you know that 30% of your purchase or donation goes to help fund the October Project?
 
-My plugins take many hours to develop (40-120+) and even more hours to document and maintain. My paid plugins have to pay for both this time, and the time I am spending on free plugins and less successful paid plugins. This means that it will take even a successful plugin years to become profitable. Please consider buying an extended license if you want me to continue to maintain these plugins for the very small fee I ask in return or hire me for adding functionality that you feel is missing but valuable.
+My plugins take many hours to develop (40-120+) and even more hours to document and maintain. My paid plugins have to
+pay for both this time, and the time I am spending on free plugins and less successful paid plugins. This means that it
+will take even a successful plugin years to become profitable. Please consider buying an extended license if you want me
+to continue to maintain these plugins for the very small fee I ask in return or hire me for adding functionality that
+you feel is missing but valuable.
 
 ## Like this plugin?
 
@@ -35,17 +43,20 @@ Please check my other [plugins](https://octobercms.com/author/Renatio).
 
 ## Support
 
-Please use [GitHub Issues Page](https://github.com/mplodowski/seomanager-plugin-public/issues) to report any issues with plugin.
+Please use [GitHub Issues Page](https://github.com/mplodowski/seomanager-plugin-public/issues) to report any issues with
+plugin.
 
 > Reviews should not be used for getting support, if you need support please use the Plugin support link.
 
-Icon made by [Darius Dan](https://www.flaticon.com/authors/darius-dan) from [www.flaticon.com](https://www.flaticon.com/).
+Icon made by [Darius Dan](https://www.flaticon.com/authors/darius-dan)
+from [www.flaticon.com](https://www.flaticon.com/).
 
 # Documentation
 
 ## Usage
 
-After installation all CMS pages, Static pages, Posts, Categories will now display additional tabs with SEO and Open Graph fields.
+After installation all CMS pages, Static pages, Posts, Categories will now display additional tabs with SEO and Open
+Graph fields.
 
 To display meta information on frontend page you must only place single SEO component in theme layout head section.
 
@@ -59,9 +70,27 @@ To display meta information on frontend page you must only place single SEO comp
     </head>
 ```
 
+## October CMS Tailor
+
+Plugin adds two mixins with Meta and Open Graph fields to Tailor. You just need to add them to your blueprint Entry
+in `fields` section like so:
+
+```
+_seo_meta_fields:
+    type: mixin
+    source: Renatio\SeoManager\MetaFields
+
+_seo_og_fields:
+    type: mixin
+    source: Renatio\SeoManager\OgFields
+```
+
+After that remember to save and migrate blueprint or run `php artisan october:migrate` command.
+
 ## Settings
 
-Plugin ships with a settings page. Go to Settings and you will see a menu item SEO configuration listed under SEO bookmark.
+Plugin ships with a settings page. Go to Settings and you will see a menu item SEO configuration listed under SEO
+bookmark.
 
 Settings allow you to specify SEO Title prefix/suffix.
 
@@ -76,7 +105,8 @@ You can enable/disable Open Graph tags output, specify Open Graph site name and 
 
 You can edit robots.txt file and .htaccess file.
 
-> Editing .htaccess file may break your site if not set up properly, so proceed with caution. This can be restricted by setting user permission.
+> Editing .htaccess file may break your site if not set up properly, so proceed with caution. This can be restricted by
+> setting user permission.
 
 ## SEO fields
 
@@ -84,11 +114,15 @@ You can edit robots.txt file and .htaccess file.
 
 #### SEO Title
 
-Defines the title of a document. Title tags are often used on search engine results pages (SERPs) to display preview snippets for a given page, and are important both for SEO and social sharing. [Read more](https://moz.com/learn/seo/title-tag).
+Defines the title of a document. Title tags are often used on search engine results pages (SERPs) to display preview
+snippets for a given page, and are important both for SEO and social
+sharing. [Read more](https://moz.com/learn/seo/title-tag).
 
 #### SEO Description
 
-Meta descriptions are HTML attributes that provide concise explanations of the contents of web pages. Meta descriptions are commonly used on search engine result pages (SERPs) to display preview snippets for a given page. [Read more](https://moz.com/learn/seo/meta-description).
+Meta descriptions are HTML attributes that provide concise explanations of the contents of web pages. Meta descriptions
+are commonly used on search engine result pages (SERPs) to display preview snippets for a given
+page. [Read more](https://moz.com/learn/seo/meta-description).
 
 #### Meta Keywords
 
@@ -96,15 +130,18 @@ A series of keywords you deem relevant to the page in question.
 
 #### Meta Robots
 
-The robots meta tag is not the same as the file called robots.txt. You should use these two together. Both are used by the search engines like Yahoo and Google. [Read more](https://yoast.com/robots-meta-tags/).
+The robots meta tag is not the same as the file called robots.txt. You should use these two together. Both are used by
+the search engines like Yahoo and Google. [Read more](https://yoast.com/robots-meta-tags/).
 
 #### Canonical URL
 
-Canonicalization for SEOs refers to normalizing (redirecting to a single dominant version) multiple URLs. [Read more](https://moz.com/learn/seo/canonicalization).
+Canonicalization for SEOs refers to normalizing (redirecting to a single dominant version) multiple
+URLs. [Read more](https://moz.com/learn/seo/canonicalization).
 
 #### 301 Redirect
 
-Redirection is the process of forwarding one URL to a different URL. There are three main kinds of redirects: 301, 302, and meta refresh. [Read more](https://moz.com/learn/seo/redirection).
+Redirection is the process of forwarding one URL to a different URL. There are three main kinds of redirects: 301, 302,
+and meta refresh. [Read more](https://moz.com/learn/seo/redirection).
 
 > More fields can be added on request.
 
@@ -134,7 +171,8 @@ Read more about [Open Graph Protocol](http://ogp.me/).
 
 ## Integration with models
 
-SEO fields can be attached to any OctoberCMS model with single line of code. You just need to implement SEO Behavior in your model class like so:
+SEO fields can be attached to any October CMS model with single line of code. You just need to implement SEO Behavior in
+your model class like so:
 
 ```
 public $implement = ['@Renatio.SeoManager.Behaviors.SeoModel'];
@@ -142,13 +180,15 @@ public $implement = ['@Renatio.SeoManager.Behaviors.SeoModel'];
 
 After implementing this behavior to your model class, SEO Manager will extend it with SEO fields.
 
-The next step is to add SEO columns to models table. This can be done by running following command. This command will scan all models that are implementing SeoModel behavior and add SEO columns to the database tables.
+The next step is to add SEO columns to models table. This can be done by running following command. This command will
+scan all models that are implementing SeoModel behavior and add SEO columns to the database tables.
 
 ```
 php artisan seo:migrate-tables
 ```
 
-To allow SEO Manager Plugin to recognize page with specific model attached you must pass it to the page view. This is most often done in component `onRun()` method like so:
+To allow SEO Manager Plugin to recognize page with specific model attached you must pass it to the page view. This is
+most often done in component `onRun()` method like so:
 
 ```
 $this->page['album'] = Album::find($id); // pass album record to page view
@@ -156,7 +196,8 @@ $this->page['album'] = Album::find($id); // pass album record to page view
 
 ## Extending SEO fields
 
-Plugin will fire `seo.extendSeoFields` event to allow for extensibility. This can be used to modify or add more SEO fields. You can listen for this event like so:
+Plugin will fire `seo.extendSeoFields` event to allow for extensibility. This can be used to modify or add more SEO
+fields. You can listen for this event like so:
 
 ```
 Event::listen('seo.extendSeoFields', function ($fields) {
@@ -169,11 +210,13 @@ Event::listen('seo.extendSeoFields', function ($fields) {
 
 Similar approach can be used to extend Open Graph fields with `seo.extendOgFields` event.
 
-Model fields are saved to database, so you must add columns to `renatio_seomanager_seo_tags` table before you can use them.
+Model fields are saved to database, so you must add columns to `renatio_seomanager_seo_tags` table before you can use
+them.
 
 ## Access SEO Tag before rendered on page
 
-Plugin will fire `seo.beforeComponentRender` event to allow for extensibility. This can be used to access page with associated SEO Tag. The assigned model should implement SeoModel behavior.
+Plugin will fire `seo.beforeComponentRender` event to allow for extensibility. This can be used to access page with
+associated SEO Tag. The assigned model should implement SeoModel behavior.
 
 ```
 /*
@@ -190,9 +233,12 @@ Event::listen('seo.beforeComponentRender', function ($component, $page) {
 
 Plugin will create three new artisan commands for working with console.
 
-**php artisan seo:migrate-tables** command will migrate tables for all models implementing SEO behavior to add SEO columns. There is additional option `--table=` that can be used to specify the database table where you want to add SEO columns.
+**php artisan seo:migrate-tables** command will migrate tables for all models implementing SEO behavior to add SEO
+columns. There is additional option `--table=` that can be used to specify the database table where you want to add SEO
+columns.
 
-**php artisan seo:patch 3.0** command will migrate data from `renatio_seomanager_seo_tags` to models that implement SeoModel behavior.
+**php artisan seo:patch 3.0** command will migrate data from `renatio_seomanager_seo_tags` to models that implement
+SeoModel behavior.
 
 **php artisan seo:import-cms** command will import SEO from CMS pages.
 

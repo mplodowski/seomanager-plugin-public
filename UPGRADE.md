@@ -2,6 +2,49 @@
 
 Versions not listed here need no action. Back up the database before upgrading.
 
+## Upgrading To 7.14.0
+
+**A record without an SEO title is titled after the record.** A model or Tailor entry whose `meta_title` is empty
+used to render the title prefix and suffix around nothing; it now renders the `title` or `name` of the record between
+them, and the backend preview shows the same. Fill `meta_title` where another title is wanted.
+
+**The blog pages are found by the class of their components.** A page carrying a subclass of the RainLab.Blog post or
+posts component under a code of its own now counts as the blog page; on a theme carrying both the original and a
+subclass on different pages, the first page in file order wins.
+
+**The Twig cache is cleared by the migration.** Should `og:locale` or another tag of a release after 6.x still be
+missing from the page, run `php artisan cache:clear` once.
+
+**`seo:doctor` and `seo:descriptions` report in the backend locale**, `backend.locale` in `config/backend.php`, not in
+the application locale. Pass `--locale=de` for another language.
+
+## Upgrading To 7.13.1
+
+**Translate SEO on a CMS page offers seven fields plus `og_image`.** The popup used to list the robots directives and
+`og_type` as well, but the page never stored those per locale; they are shared by every locale, as they are on models
+and Tailor entries. A translation of `og_image` typed before this release was written to the page file and ignored;
+it is read from now on.
+
+## Upgrading To 7.13.0
+
+**`october:migrate` now adds the SEO columns.** Every table of a model carrying the `SeoModel` behavior that is missing
+any of the twelve SEO columns receives them at the end of `php artisan october:migrate`, the same change
+`seo:migrate-tables` and the button on the **Diagnostics** tab make. A deploy script that ran
+`seo:migrate-tables --force` after the migration can drop that line; one that relied on the columns *not* being there
+— there is no known reason to — has to keep the behavior off those models. The change only ever adds nullable columns
+and never touches a column that exists. A failure is written to the log and never aborts the migration. Set
+`add_seo_columns` to `false` in `config/renatio/seomanager/migrate.php` of the project to keep `october:migrate` out
+of the tables of other plugins.
+
+**`seo:doctor` fails on a default Open Graph image that is gone.** The new `og_default_image` check returns an error
+when the image set on the **General** tab no longer exists in the media library, so a pipeline gating on the exit
+code of `seo:doctor` can go red after the upgrade. Set the image again, or clear the field. Open Graph enabled
+without a default image is a warning and does not change the exit code.
+
+**A new permission is held back from every role but Developer.** `renatio.seomanager.delete_static_sitemap` governs the
+**Delete the static sitemap file** button of the **Diagnostics** tab, which deletes files from the web root. Like
+`change_htaccess` and `migrate_seo_columns`, it names `roles`, so only Developer receives it.
+
 ## Upgrading To 7.9.0
 
 **A new permission is held back from every role but Developer.** `renatio.seomanager.migrate_seo_columns` governs the

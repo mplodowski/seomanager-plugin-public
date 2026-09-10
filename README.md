@@ -134,11 +134,27 @@ Go to **Settings > SEO Configuration**. The settings cover:
 > can put scripts on every page. The field is guarded by its own **Change common meta tags** permission.
 
 > Editing .htaccess may break your site, so it is off by default. Turn it on with the switch on the .htaccess tab
-> when you need it. Both the switch and the editor are guarded by the **Change .htaccess** permission, which no role
-> is given by default: a superuser holds it, the built-in Developer role holds it, and any other role has to have it
-> ticked in **Settings > Administrators > Roles**. The built-in Publisher role is the one exception - October locks
-> the permissions of its own roles, so editors who need the file have to sit on a custom role or on Developer.
-> Editing robots.txt is everyday SEO work and stays open to every role that reaches the settings page.
+> when you need it. Both the switch and the editor are guarded by the **Change .htaccess** permission.
+
+### Permissions
+
+The settings page opens with **Manage SEO settings**, which the built-in Developer and Publisher roles hold. The
+fields whose reach goes beyond one site are guarded on top of that, and a field the administrator may not change is
+left out of the form rather than shown read-only:
+
+| Permission | Guards | Given by default to |
+| --- | --- | --- |
+| Manage SEO settings | the settings page and every field not listed below | Developer, Publisher |
+| View SEO Health and run its checks | the SEO Health page, its dashboard widget and the sitemap rebuild | Developer, Publisher |
+| Change robots.txt and the AI crawler policy | the robots.txt editor, its reset button and the AI crawler policy | Developer |
+| Change the allowed redirect hosts | the list of external hosts a 301 redirect may point to | Developer |
+| Change common meta tags | the raw HTML placed in the head of every page | Developer |
+| Change .htaccess file | the .htaccess switch and editor | Developer |
+| Add the missing SEO columns | the button on the SEO Health page that alters tables of other plugins | Developer |
+| Delete the static sitemap file | the button on the SEO Health page that deletes a file from the web root | Developer |
+
+A superuser holds every permission. October locks the permissions of its built-in roles, so an editor who needs one
+of the Developer-only permissions has to sit on a custom role with it ticked in **Settings > Administrators > Roles**.
 
 ### Multisite
 
@@ -154,8 +170,7 @@ and the settings page labels them as such:
 * **robots.txt** and **.htaccess**, including the AI crawler policy and the .htaccess switch — there is one public
   directory per installation;
 * the **allowed redirect hosts**, a security list that is easier to audit in one place;
-* the **sitemap rebuild schedule** and whether the **Rebuild** button goes through the queue — one scheduler and one
-  queue serve the whole installation.
+* the **sitemap rebuild schedule** — one scheduler serves the whole installation.
 
 Upgrading an existing installation gives every site a copy of the settings it had before, so nothing changes until you
 edit one of the sites. A site added later starts from the defaults, with the shared fields taken from the sites that
@@ -199,15 +214,20 @@ Event::listen('seo.extendAiCrawlers', function (&$crawlers) {
 
 ## SEO fields
 
+* On a CMS page, the **Meta** section October itself offers (meta title, description, image, type and robot
+  directives) fills in whichever of these fields the SEO popup leaves blank; a value in the SEO popup always wins.
 * **SEO Title** - the document title, shown in search results and when sharing.
   [Read more](https://moz.com/learn/seo/title-tag)
 * **SEO Description** - the meta description shown as the snippet in search results.
   [Read more](https://moz.com/learn/seo/meta-description)
-* **Meta Keywords** - keywords relevant to the page.
-* **Meta Robots** - the robots meta tag, used together with robots.txt.
+* **Meta Robots** - the robots meta tag, used together with robots.txt. Index and follow are chosen with the radio
+  buttons; **Meta Robots Advanced** takes the remaining directives, comma separated, such as `noarchive`,
+  `nosnippet`, `max-snippet:150` or `max-image-preview:large`, and refuses one the tag does not know.
   [Read more](https://yoast.com/robots-meta-tags/)
-* **Canonical URL** - the dominant URL when several point at the same content.
+* **Canonical URL** - the dominant URL when several point at the same content: a path from the root or an absolute
+  http(s) address, on any host.
   [Read more](https://moz.com/learn/seo/canonicalization)
+* **Meta Keywords** - keywords relevant to the page. Google and Bing ignore them, so the field sits last.
 * **301 Redirect** - when filled, every request of that page is redirected, as long as the `seoTags` component is
   present in the page or its layout. The target must be a relative path (`/new-page`) or an absolute URL on an
   allowed host: the hosts of the configured sites plus **Settings > SEO Configuration > Allowed redirect hosts**.
@@ -239,6 +259,15 @@ alternates and its share card. Only the `noindex` applies.
 
 * **OG Title**, **OG Description**, **OG Type** and **OG Image**, as defined by the
   [Open Graph Protocol](http://ogp.me/).
+
+**OG Type** offers the object types a site is likely to share; "Automatic" renders `article` for a record with a publish
+date and `website` otherwise. Add a type of your own with the `seo.extendOgTypes` event:
+
+```php
+Event::listen('seo.extendOgTypes', function (array &$types) {
+    $types[] = 'music.playlist';
+});
+```
 
 > More fields can be added on request.
 
@@ -293,8 +322,8 @@ Event::listen('seo.extendImageSources', function (array &$sources, Model $model)
 ## Preview in the backend
 
 The **SEO** tab opens with the Google result the record would produce, and the **Open Graph** tab with the Facebook
-and X (Twitter) share cards. Both redraw while you type, on the models carrying the `SeoModel` behavior and on
-Tailor entries alike.
+link box and the X (Twitter) card, drawn the way each network renders a share, with or without an image. Both redraw while you type, on the models carrying the `SeoModel` behavior, on
+Tailor entries and on the static pages of RainLab.Pages alike.
 
 Everything the preview needs is worked out once while the form is built, by the same classes the page render goes
 through, and the script only substitutes what you type. A field you leave empty shows in grey italics what the
@@ -307,12 +336,17 @@ The title and the description are measured in pixels rather than counted in char
 pixels a desktop result fits, because that is where the search engines truncate. The character counters on the
 fields themselves are unchanged.
 
-Three things the preview cannot know. Two belong to the page serving the record rather than to the record itself.
-The address: the snippet names the site being edited and leaves the path greyed out as a placeholder unless a
-**Canonical URL** is filled in. What a blank field inherits from that page's own SEO settings on render: the preview
-shows the title composed from the plugin settings where the render would use the page's title, and nothing at all
-where the render would inherit the page's description. The third is the record's own state: one that has never
-been saved holds no relation to read, so its preview falls straight through to the default image from the settings.
+The snippet names the address the record is served from, as the sitemap would list it: the page holding the
+blog post, the category or the Tailor section is found in the theme, its pattern is filled with the record's own
+values and the slug follows the **Slug** field while you type. A record no page is known to serve is shown right
+under the site. A **Canonical URL** replaces the address once it is filled in. The favicon comes from the theme
+(`assets/images/favicon.*`, `assets/img/favicon.*` or `assets/favicon.*`) or from the web root, and the grey circle
+stays when there is none.
+
+Two things the preview cannot know. What a blank field inherits from the page's own SEO settings on render: the
+preview shows the title composed from the plugin settings where the render would use the page's title, and nothing
+at all where the render would inherit the page's description. And the record's own state: one that has never been
+saved holds no relation to read, so its preview falls straight through to the default image from the settings.
 
 ## JSON-LD Structured Data
 
@@ -321,8 +355,8 @@ The `seoTags` component outputs [JSON-LD](https://json-ld.org/) structured data 
 name and logo) and lets AI search engines understand who publishes the site and what each page is about.
 
 JSON-LD is enabled by default. The **Organization** tab in the settings holds the switch and every field the schemas
-read, warns about what is missing, links to the Schema.org validator and Google Rich Results Test, and previews the
-JSON-LD generated for the home page.
+read and warns about what is missing. The **SEO Health** page links to the Schema.org validator and the Google Rich
+Results Test and previews the JSON-LD generated for the home page.
 
 ### Generated schemas
 
@@ -480,24 +514,27 @@ The plugin serves a sitemap at `/sitemap.xml` that includes:
 Alternates cover the same sites as the `seoTags` hreflang tags — see the two rules under **Hreflang Tags** — except
 that a per-site post missing from a site gets no alternate for it in the sitemap.
 
-Hidden pages and anything with `noindex` are excluded. The sitemap is cached in `storage/app/seomanager` and rebuilt
+Hidden pages, anything with `noindex` and anything with a 301 redirect URL are excluded. The sitemap is cached in `storage/app/seomanager` and rebuilt
 by the scheduler, so October's cron entry has to be in place:
+
+With the sitemap switched off, or under a prefix no site answers to, the address is handed to the CMS as if the plugin
+had no route there, so a theme page with `url = "/sitemap.xml"` can serve it instead.
 
 ```bash
 * * * * * php /path/to/artisan schedule:run >> /dev/null 2>&1
 ```
 
-Enable it in **Settings > SEO Configuration > Sitemap**. The tab lists the sitemap URL of every site with its cache
-status, offers a preview link and a **Rebuild sitemap** button for publishing a change right away, and warns when
-robots.txt has no `Sitemap:` line.
+Enable it in **Settings > SEO Configuration > Sitemap**. **Settings > SEO > SEO Health** lists the sitemap URL of
+every site with its cache status, offers a preview link and a **Rebuild sitemap** button for publishing a change right
+away, and warns when robots.txt has no `Sitemap:` line.
 
 **Rebuild** picks how often the scheduler runs: every hour, every day at a chosen hour, every week on Sunday, or never.
 A cached sitemap older than 48 hours — two weeks when the rebuild is weekly — is rebuilt inside the request that asks
 for it, so a stopped scheduler cannot freeze the map for good. Pick *Never* to leave the map to that fallback alone.
 
-**Rebuild through the queue** moves the work behind the **Rebuild** button out of the backend request and into a
-worker, which keeps a large sitemap from hitting the execution time limit. The scheduled rebuild runs outside the
-request either way and ignores the switch, as does the `sync` queue driver, which would run the job in the caller.
+The **Rebuild** button hands the work to a queue worker whenever the queue driver is anything but `sync`, which keeps
+a large sitemap from hitting the execution time limit; on `sync` it rebuilds inside the request. The scheduled
+rebuild runs outside the request either way.
 
 Give the queue connection a `retry_after` longer than a full rebuild of every site takes. A job still running when
 `retry_after` elapses is reserved again by another worker, which marks the first run failed even though it finishes
@@ -543,7 +580,7 @@ The `sites` a resolver returns become `xhtml:link` alternates, narrowed to the s
 excluded with `noindex` is not recognisable through the page finder, so it is listed - the `SeoModel` records the
 plugin reads first hand keep honouring it.
 
-A page no type can address is reported on the **Sitemap** settings tab and by `seo:doctor`, rather than dropped in
+A page no type can address is reported on the **SEO Health** page and by `seo:doctor`, rather than dropped in
 silence. Give the plugin owning the records a page finder type, or add the addresses through `seo.extendSitemap` below -
 a page whose pattern one of the added addresses matches counts as covered.
 A page that belongs outside the map — a paginated archive, a filter — is left out of the report once its SEO settings
@@ -594,7 +631,7 @@ php artisan seo:migrate-tables
 ```
 
 Without those columns the behavior is dead and nothing entered in the SEO tab is stored, with no error anywhere. The
-**Diagnostics** tab names every table this happened to and adds the columns to all of them on a button, so an
+**SEO Health** page names every table this happened to and adds the columns to all of them on a button, so an
 environment that has not been migrated since does not stay silently without SEO.
 
 For the plugin to recognize the model on a page, pass it to the page view, usually in a component's `onRun()`:
@@ -660,8 +697,10 @@ has been deleted from the media library describes the site with a broken identit
 image shares every page and entry that has no picture of its own without one, and a `robots.txt` that never names the
 sitemap leaves crawlers to find it on their own.
 
-The **Diagnostics** tab of the SEO settings lists all of them, and `seo:doctor` reports the same checks on the command
-line, exiting with a non-zero status when one of them fails — which makes it usable as a deploy or CI step:
+**Settings > SEO > SEO Health** lists all of them, next to the sitemap status and the meta title and description
+audits, and a **SEO Health** dashboard widget shows the same counts with the checks that fail. `seo:doctor` reports the
+same checks on the command line, exiting with a non-zero status when one of them fails — which makes it usable as a
+deploy or CI step:
 
 ```
 php artisan seo:doctor
@@ -678,12 +717,12 @@ Event::listen('seo.registerDiagnosticChecks', function (array &$checks) {
 
 The label of a check is read from the `renatio.seomanager::lang.diagnostics.<key>` translation key.
 
-When the SEO columns are missing the tab offers an **Add the missing SEO columns** button, which runs the same schema
+When the SEO columns are missing the page offers an **Add the missing SEO columns** button, which runs the same schema
 change as `seo:migrate-tables` on every table it reported — so an environment that was never migrated can be repaired
 without shell access. The button alters tables belonging to other plugins, so it carries its own
 `renatio.seomanager.migrate_seo_columns` permission, held by the Developer role alone.
 
-A static sitemap file found in the web root can be deleted from the same tab with the **Delete the static sitemap
+A static sitemap file found in the web root can be deleted from the same page with the **Delete the static sitemap
 file** button, which removes every file and symlink the check reported. Deleting from the web root of a production
 server is guarded the same way, by the `renatio.seomanager.delete_static_sitemap` permission of the Developer role.
 
@@ -694,16 +733,29 @@ itself; a placeholder repeating the title — `Kontakt`, `Produkte`, `News` — 
 fallback landed, it also travels: a record that has no description of its own inherits the one on the CMS page it is
 rendered on, so a single placeholder on `/product/:slug` describes every product under it.
 
-The same **Diagnostics** tab carries a **Check the meta descriptions** button, and `seo:descriptions` prints the whole
-list on the command line:
+The **Meta descriptions** tab of the same **SEO Health** page carries a **Check again** button, and `seo:descriptions`
+prints the whole list on the command line:
 
 ```
 php artisan seo:descriptions
 ```
 
 Both report every page, static page, Tailor entry and model record whose description is missing, only repeats a
-heading the record already carries, is shorter than 50 characters or is used under more than one address — and name
-the pages whose description is handed down to the records rendered on them.
+heading the record already carries, is shorter than 50 characters or is used under more than one address. A page
+whose URL carries a parameter says so on its own row: what it holds, or fails to hold, reaches every record rendered
+on it.
+
+Each row links to where the text is changed: the Editor for a CMS page, the Static Pages list, the entry form for a
+Tailor entry and the post or category form for RainLab.Blog. A project holding `SeoModel` records of its own names
+their address through `seo.audit.editUrl`:
+
+```php
+Event::listen('seo.audit.editUrl', function ($record, &$url) {
+    if ($record instanceof Product) {
+        $url = Backend::url('acme/shop/products/update/' . $record->getKey());
+    }
+});
+```
 
 Only what a visitor can reach is read: records set to `noindex`, drafts and entries outside their publishing window
 are left out, along with the `/404`, `/error` and `/sitemap.xml` addresses. A page set to `noindex` is left out too
@@ -727,6 +779,20 @@ render of the settings page. A table it cannot read is named in the report rathe
 content outgrows what one report can hold is told that only part of it was checked — a clean bill of health produced
 by a failed query, or by a scan that stopped early, is the one answer this is meant not to give.
 
+### Meta titles
+
+The **Meta titles** block of the same tab, and `seo:titles` on the command line, read the same content and report the
+title instead: an address with no title at all, one that outgrows 60 characters once the prefix and suffix of the
+settings are added — the length measured is the composed title, because that is what a result page prints — and one
+used under more than one address, compared within a single site and locale the same way descriptions are.
+
+```
+php artisan seo:titles
+```
+
+A record without a meta title of its own is not reported: the page is still listed under the heading it carries, which
+is what the `seoTags` component falls back to.
+
 ## Translations
 
 The backend ships in Czech, Dutch, English, French, German, Italian, Polish, Brazilian Portuguese, Russian and
@@ -742,6 +808,8 @@ Names that are the same everywhere are left in English: Open Graph, JSON-LD, hre
 * `seo:doctor` - report the configuration problems that fail silently; exits with a non-zero status on a failed check
 * `seo:descriptions` - list the pages and records whose meta description is missing, copied from the title, too
   short or reused; both reports are written in the backend locale, `--locale=de` picks another language
+* `seo:titles` - list the pages and records whose meta title is missing, longer than 60 characters with the prefix
+  and suffix, or reused; takes the same `--locale=` option
 * `seo:migrate-tables` - add SEO columns to the tables of all models implementing the SeoModel behavior; `--table=`
   limits it to one table, `--force` skips the confirmation (required in deploy scripts and CI)
 * `seo:patch 3.0` - migrate data from `renatio_seomanager_seo_tags` to models implementing the behavior

@@ -2,162 +2,47 @@
 
 Versions not listed here need no action. Back up the database before upgrading.
 
-## Upgrading To 7.14.0
+## Upgrading To 7.16.0
 
-**A record without an SEO title is titled after the record.** A model or Tailor entry whose `meta_title` is empty
-used to render the title prefix and suffix around nothing; it now renders the `title` or `name` of the record between
-them, and the backend preview shows the same. Fill `meta_title` where another title is wanted.
+Everything since 7.3.1 ships at once. Back up the database, run `php artisan october:migrate` and
+rebuild the sitemap.
 
-**The blog pages are found by the class of their components.** A page carrying a subclass of the RainLab.Blog post or
-posts component under a code of its own now counts as the blog page; on a theme carrying both the original and a
-subclass on different pages, the first page in file order wins.
+**Settings are stored per site.** The migration copies the one record to every site; the sites diverge only once one
+of them is edited. The robots.txt and .htaccess text is no longer kept in the record.
 
-**The Twig cache is cleared by the migration.** Should `og:locale` or another tag of a release after 6.x still be
-missing from the page, run `php artisan cache:clear` once.
+**Editing .htaccess is off by default.** The .htaccess tab shows a switch in place of the editor. The **Change
+.htaccess** permission, and the new **Add the missing SEO columns** and **Delete the static sitemap file**
+permissions, are held back from every built-in role but Developer; give editors who need them a custom role.
 
-**`seo:doctor` and `seo:descriptions` report in the backend locale**, `backend.locale` in `config/backend.php`, not in
-the application locale. Pass `--locale=de` for another language.
+**`october:migrate` adds the missing SEO columns** to every table of a model carrying the `SeoModel` behavior. A deploy
+script running `seo:migrate-tables --force` can drop that line. Set `add_seo_columns` to `false` in
+`config/renatio/seomanager/migrate.php` to keep it out of other plugins' tables.
 
-## Upgrading To 7.13.1
+**The `seoTags` component renders from a copy of the record.** A listener comparing `$component->seoTag` with the
+controller variable by identity has to compare keys instead. `seo.extendSeoFields` and `seo.extendOgFields` now fire
+on every public request, so keep those listeners cheap. A field added through `seo.extendSeoFields` also reaches the
+SEO settings of CMS pages.
 
-**Translate SEO on a CMS page offers seven fields plus `og_image`.** The popup used to list the robots directives and
-`og_type` as well, but the page never stored those per locale; they are shared by every locale, as they are on models
-and Tailor entries. A translation of `og_image` typed before this release was written to the page file and ignored;
-it is read from now on.
+**The tags change on a few pages.** A record or a CMS page without an SEO title is titled after its own title instead
+of an empty tag. `og:locale` carries a territory (`de_DE`, overridable in `config/renatio/seomanager/og_locales.php`).
+Error responses get `noindex` and no canonical, and a 404 or 410 no Open Graph tags. The Organization schema and the
+article publisher carry the site URL; drop a `seo.extendJsonLd` listener that added it.
 
-## Upgrading To 7.13.0
+**The sitemap grows.** CMS pages with a URL parameter are filled from October's page finder, records that redirect or
+hidden static pages are left out, and a map over 50 000 URLs or 50 MB is split into numbered files behind an index.
 
-**`october:migrate` now adds the SEO columns.** Every table of a model carrying the `SeoModel` behavior that is missing
-any of the twelve SEO columns receives them at the end of `php artisan october:migrate`, the same change
-`seo:migrate-tables` and the button on the **Diagnostics** tab make. A deploy script that ran
-`seo:migrate-tables --force` after the migration can drop that line; one that relied on the columns *not* being there
-— there is no known reason to — has to keep the behavior off those models. The change only ever adds nullable columns
-and never touches a column that exists. A failure is written to the log and never aborts the migration. Set
-`add_seo_columns` to `false` in `config/renatio/seomanager/migrate.php` of the project to keep `october:migrate` out
-of the tables of other plugins.
+**The JSON-LD tab is now the Organization tab**, with the identity, contact data, address and social profile rows,
+and a new `socialProfiles` component draws the profiles on the page.
 
-**`seo:doctor` fails on a default Open Graph image that is gone.** The new `og_default_image` check returns an error
-when the image set on the **General** tab no longer exists in the media library, so a pipeline gating on the exit
-code of `seo:doctor` can go red after the upgrade. Set the image again, or clear the field. Open Graph enabled
-without a default image is a warning and does not change the exit code.
+**`og_type` is a dropdown** of the types in `Renatio\SeoManager\Classes\OgTypes` plus whatever the record stores;
+extend it through `seo.extendOgTypes`. The Translate SEO popup of a CMS page offers only the fields stored per locale.
 
-**A new permission is held back from every role but Developer.** `renatio.seomanager.delete_static_sitemap` governs the
-**Delete the static sitemap file** button of the **Diagnostics** tab, which deletes files from the web root. Like
-`change_htaccess` and `migrate_seo_columns`, it names `roles`, so only Developer receives it.
+**New validation on save.** **Canonical URL** takes a path from the root or an absolute http(s) address, **Meta Robots
+Advanced** only known directives, and the string fields are capped at 255 characters. A record holding another value
+keeps rendering until it is edited.
 
-## Upgrading To 7.9.0
-
-**A new permission is held back from every role but Developer.** `renatio.seomanager.migrate_seo_columns` governs the
-**Add the missing SEO columns** button of the **Diagnostics** tab, which alters tables belonging to other plugins.
-Like `change_htaccess`, it names `roles`, so October files it under Developer alone and the built-in Publisher does
-not receive it — and the permissions field of a system role cannot be edited, so an editor who needs it has to be
-given a custom role. Nobody loses anything they already had; the permission is new. `seo:migrate-tables` is
-unaffected and stays the way to do this from a deploy script.
-
-**A partially migrated table is now recognised and completed.** Until now a table counted as migrated as soon as it
-carried `meta_title`, so a table that already had a column of its own under one of the SEO names — `meta_description`
-and `og_image` are the common ones — was left with only part of the set, silently storing nothing for the rest, while
-the diagnostics reported it as healthy. Both the button and `seo:migrate-tables` now compare the full set and add only
-the columns that are absent. Expect the command to report work on a table it used to skip.
-
-## Upgrading To 7.8.0
-
-**The sitemap grows.** A CMS page whose URL carries a parameter used to be skipped whole; it is now filled with the
-records of every plugin answering October's page finder (the `cms.pageLookup` events). Expect
-addresses to appear that a `seo.extendSitemap` listener was written to add by hand — the listener still runs, and the
-same address offered twice is written once, so nothing has to be removed. Rebuild the map after the upgrade to see it.
-
-Only the types listing every record of their kind are read; a type addressing one record picked in the backend is
-left alone. A record excluded with `noindex` cannot be recognised through the page finder, so it is listed — hide it
-by keeping the plugin out of the API, or by dropping the address in a `seo.extendSitemap` listener.
-
-**Pages nothing can list the records of are reported.** They appear on the **Sitemap** settings tab and as an
-`unmapped_pages` check of the **Diagnostics** tab and of `seo:doctor`. It is a warning rather than an error, so it
-does not change the exit status of the command.
-
-## Upgrading To 7.7.1
-
-**The `seoTags` component no longer writes on the record it renders.** The page fallback added in 7.3.0, the built
-title, the robots value and the Open Graph defaults are written on a copy of the entry or the post. A layout that
-prints `{{ post.meta_description }}` below the component therefore shows the value of the record again rather than the
-one inherited from the page, and a `save()` on that record later in the same request no longer stores the page text in
-its columns.
-
-The copy carries the same class and the same loaded relations, so a `seo.beforeComponentRender` or `seo.extendJsonLd`
-listener still sees the record it expects. It is a different instance, though — a listener that compared
-`$component->seoTag` with `$this->controller->vars['post']` by identity has to compare the keys instead. The copy is
-made before `seo.beforeComponentRender`, so a listener writing on `$component->seoTag` still has its value rendered,
-and a record the listener puts there in its place is copied in turn.
-
-The copy takes the attributes and the loaded relations of the record, and reads its translations from the database
-like any other instance. With RainLab.Translate on a locale other than the default one, a value that some other code
-wrote on the record earlier in the same request - without saving it - is therefore not carried over; set it from a
-`seo.beforeComponentRender` listener instead, which runs on the copy.
-
-**`seo.extendSeoFields` and `seo.extendOgFields` fire on the front end.** The component builds the names of the page
-tags from the same events the backend forms are built from, so a listener that used to run only while a form was
-rendered now runs once per rendered page. A listener doing backend work — querying the database for dropdown options,
-reading `BackendAuth` — has to be made cheap or guarded, because it is on the path of every public request.
-
-**A field added through `seo.extendSeoFields` reaches the CMS pages.** It is now offered in the SEO settings of a CMS
-page, carried onto the tag the component builds from that page and inherited by an entry that leaves it blank, the
-same as the fields the plugin ships. Nothing has to be configured, and a page that never held the field renders
-nothing for it. A field the inspector has no control for — a `hint`, a `repeater`, a `ruler` — is left out of the page
-settings, and a field added through `seo.extendOgFields` still follows the Open Graph switch in the backend forms.
-
-## Upgrading To 7.6.0
-
-**The social profiles are rows now.** The **Social profiles** textarea on the Organization tab is replaced by a
-repeater whose rows carry the address, the service its icon is drawn from and an optional name. The migration
-converts what is stored, guessing the service from the host of each address, so check the rows once after the
-upgrade — an address the plugin does not recognise is given the generic globe.
-
-Anything reading `organization_same_as` from the settings has to read `social_profiles` instead. The `sameAs`
-property of the `Organization` schema is unchanged and now takes its addresses from the rows.
-
-The field is no longer hidden by the **Structured data** switch: the new `socialProfiles` component draws the
-profiles whether or not JSON-LD is enabled.
-
-## Upgrading To 7.5.1
-
-**`og:locale` now carries a territory.** A site whose locale names a language alone published `og:locale` as `de`,
-which Open Graph ignores; it is now `de_DE`, and `og:locale:alternate` follows the same rule for the other sites of
-the group. Nothing is configured for it, and `hreflang` keeps the bare language it wants. A project that needs a
-different territory - `de_AT` rather than `de_DE` - overrides the map in `config/renatio/seomanager/og_locales.php`
-or through the `seo.extendOgLocales` event.
-
-**The Change .htaccess permission is no longer part of the default set of a role.** A superuser and the built-in
-Developer role keep it, and any custom role that was granted it keeps it too, because a custom role stores its own
-permissions. The built-in **Publisher** role loses it: October computes the permissions of its own roles on every
-read and locks them in the role editor, so editors who have to reach the .htaccess editor need a custom role with
-the permission ticked, or the Developer role.
-
-**robots.txt and .htaccess end with a single newline.** Saving the settings used to write the file back without its
-last byte, which showed up as a change in git on every save. The file is now left alone when nothing but that newline
-differs, so the first save after the upgrade may add the newline back once.
-
-## Upgrading To 7.5.0
-
-**The JSON-LD tab is now the Organization tab.** The switch that turns structured data on, the warnings, the home page
-preview and the organization logo all moved onto it, joined by the rest of the fields that describe who runs the site.
-Nothing stored changed — only where it is edited.
-
-The `Organization` schema and the `publisher` of an article now carry a `url` pointing at the base URL of the active
-site. No configuration is involved; a project that already added the property through `seo.extendJsonLd` should drop
-that listener, or it will overwrite the value the plugin sets.
-
-Everything on the Organization tab is optional and empty on an upgrade, and an empty field is left out of the schema
-rather than published blank, so the output only grows once fields are filled in. The identity stays `Organization`
-until one of the LocalBusiness types is picked. Like the rest of the SEO settings, the tab is stored per site.
-
-## Upgrading To 7.4.0
-
-Editing `.htaccess` from the settings page is now off by default, on existing installations too. The .htaccess tab
-shows a switch, **Allow editing .htaccess from this page**, in place of the editor; turning it on brings the editor
-back. The switch is guarded by the existing **Change .htaccess** permission, so a user who could not edit the file
-before cannot enable it either.
-
-Nothing on disk changes and no data is lost — only the editor is hidden until you ask for it.
+**`seo:doctor` exits non-zero on a failed check**, including a default Open Graph image gone from the media library.
+It and `seo:descriptions` report in the backend locale; pass `--locale` for another.
 
 ## Upgrading To 1.1.0
 

@@ -2,48 +2,6 @@
 
 Versions not listed here need no action. Back up the database before upgrading.
 
-## Upgrading To 7.16.0
-
-Everything since 7.3.1 ships at once. Back up the database, run `php artisan october:migrate` and
-rebuild the sitemap.
-
-**Settings are stored per site.** The migration copies the one record to every site; the sites diverge only once one
-of them is edited. The robots.txt and .htaccess text is no longer kept in the record.
-
-**Editing .htaccess is off by default.** The .htaccess tab shows a switch in place of the editor. The **Change
-.htaccess** permission, and the new **Add the missing SEO columns** and **Delete the static sitemap file**
-permissions, are held back from every built-in role but Developer; give editors who need them a custom role.
-
-**`october:migrate` adds the missing SEO columns** to every table of a model carrying the `SeoModel` behavior. A deploy
-script running `seo:migrate-tables --force` can drop that line. Set `add_seo_columns` to `false` in
-`config/renatio/seomanager/migrate.php` to keep it out of other plugins' tables.
-
-**The `seoTags` component renders from a copy of the record.** A listener comparing `$component->seoTag` with the
-controller variable by identity has to compare keys instead. `seo.extendSeoFields` and `seo.extendOgFields` now fire
-on every public request, so keep those listeners cheap. A field added through `seo.extendSeoFields` also reaches the
-SEO settings of CMS pages.
-
-**The tags change on a few pages.** A record or a CMS page without an SEO title is titled after its own title instead
-of an empty tag. `og:locale` carries a territory (`de_DE`, overridable in `config/renatio/seomanager/og_locales.php`).
-Error responses get `noindex` and no canonical, and a 404 or 410 no Open Graph tags. The Organization schema and the
-article publisher carry the site URL; drop a `seo.extendJsonLd` listener that added it.
-
-**The sitemap grows.** CMS pages with a URL parameter are filled from October's page finder, records that redirect or
-hidden static pages are left out, and a map over 50 000 URLs or 50 MB is split into numbered files behind an index.
-
-**The JSON-LD tab is now the Organization tab**, with the identity, contact data, address and social profile rows,
-and a new `socialProfiles` component draws the profiles on the page.
-
-**`og_type` is a dropdown** of the types in `Renatio\SeoManager\Classes\OgTypes` plus whatever the record stores;
-extend it through `seo.extendOgTypes`. The Translate SEO popup of a CMS page offers only the fields stored per locale.
-
-**New validation on save.** **Canonical URL** takes a path from the root or an absolute http(s) address, **Meta Robots
-Advanced** only known directives, and the string fields are capped at 255 characters. A record holding another value
-keeps rendering until it is edited.
-
-**`seo:doctor` exits non-zero on a failed check**, including a default Open Graph image gone from the media library.
-It and `seo:descriptions` report in the backend locale; pass `--locale` for another.
-
 ## Upgrading To 1.1.0
 
 Plugin requires October CMS build 420+ with Laravel 5.5 and PHP >=7.0.
@@ -109,7 +67,7 @@ Event::listen('seo.extendSeoFields', function (&$fields) {
 
 ## Upgrading To 7.1.0
 
-The XML sitemap is disabled by default. Enable it in **Settings > SEO Configuration > Sitemap** to serve
+The XML sitemap is disabled by default. Enable it in **Settings > SEO > SEO Manager > Sitemap** to serve
 `/sitemap.xml`.
 
 ## Upgrading To 7.1.1
@@ -124,8 +82,6 @@ already a JSON string:
 ```
 
 ## Upgrading To 7.2.3
-
-The plugin requires `october/rain` `^4.0` again instead of `^4.1`; nothing in it depends on October 4.1.
 
 The **Common meta tags** field is now guarded by its own **Change common meta tags** permission. Grant it to the roles
 that should keep editing the field. Super users are unaffected.
@@ -150,3 +106,44 @@ on a `noindex` page is no longer listed.
 Projects locked to Guzzle 8 could not install versions 7.1.0 to 7.3.0, as `spatie/laravel-sitemap` 7.x (and 8.0.0)
 requires Guzzle 7; the plugin now also accepts `spatie/laravel-sitemap` 8.0.1 or newer, which needs PHP 8.4 or newer.
 Run `composer update renatio/seomanager-plugin -W` to let Composer pick it.
+
+## Upgrading To 8.0.0
+
+Requires October CMS 4.4. Run `php artisan october:migrate`: with `add_seo_columns` on (the default) it also adds the
+new **Focus Keyword** column to `SeoModel` tables and to Tailor tables using the SEO mixins; where it is off, run
+`php artisan seo:migrate-tables --force` and `php artisan tailor:migrate`. Then rebuild the sitemap.
+
+- From a version below 7.2.3, upgrade to 7.3.2 first.
+- Settings are stored per site; the migration copies the current ones to every site.
+- **Change the .htaccess file**, **Change common meta tags** and the new **Change robots.txt and the AI crawler
+  policy**, **Change the allowed redirect hosts**, **Add the missing SEO columns** and **Delete the static sitemap
+  file** are Developer only; the new **View SEO Health and run its checks** goes to Developer and Publisher. Tick them
+  for custom roles.
+- The .htaccess tab shows only on Apache or LiteSpeed; elsewhere set `tab` to `true` in
+  `config/renatio/seomanager/htaccess.php`. Editing stays off until switched on in the tab.
+- `seo:migrate-tables`, `seo:patch`, `seo:import-cms` and `seo:import-static` ask for confirmation and exit 1 when it
+  is declined or cannot be asked: pass `--force` in deploy scripts, or drop `seo:migrate-tables` where `october:migrate`
+  adds the columns.
+- The sitemap is rebuilt on a schedule (daily at 03:00), not on save: add the `schedule:run` cron entry.
+- Delete any `sitemap.xml`, `sitemap.xsl`, `llms.txt` or `llms-full.txt` in the web root; it shadows the plugin.
+- Sitemap, llms.txt, IndexNow and the default robots.txt build addresses on `APP_URL`: make it the public address.
+- Slug redirects and the 404 log are on; switch them off on the **General** settings tab.
+- A non-GET request to a slug redirect or to a **301 Redirect** on a site host gets 308 instead of 301, so a posted form
+  keeps its method and body.
+- Removed: `Sitemap::buildForAllSites()` (use `rebuildAllSites()`), the `RobotsTxt` rule object (use the
+  `seo_robots_txt` rule) and the **Twitter/X creator** setting with its `twitter:creator` tag.
+- `$component->seoTag` is a copy of the record: compare by key, not identity. `seo.extendSeoFields` and
+  `seo.extendOgFields` run on every public request, so keep them cheap.
+- On a page with URL parameters a record from the page variables is used only when it holds a parameter's value
+  (`/albums/:slug` and its `slug`); otherwise assign it in `seo.beforeComponentRender`.
+- Sites of different groups running one theme now share hreflang links; keep brands apart with `seo.alternateSites`.
+  Records of a model with the `Multisite` trait link only the versions sharing a `site_root_id`.
+- The canonical tag names the record's own address and keeps `?page=N` of a paginated listing (page 1 without it);
+  other parameters are dropped. Change the list in `query_params` of `config/renatio/seomanager/canonical.php`.
+- A page whose canonical names another address leaves the sitemap.
+- `og:locale` carries a territory (`de_DE`), error responses except 503 get `noindex, nofollow`, and the Organization
+  schema carries the site URL: drop a `seo.extendJsonLd` listener that added it.
+- Saving validates **Canonical URL**, **Meta Robots Advanced** (no `all` or `none`) and a 255-character limit.
+- An empty body now fails **Content length**, so `seo:analyze --fail-on=poor` may start failing in CI.
+- RainLab.Translate is legacy: SEO Health lists the translations only it still reads and the `translate:import-*`
+  command that moves them.

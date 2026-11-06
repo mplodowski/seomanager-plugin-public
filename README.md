@@ -622,6 +622,15 @@ Event::listen('seo.extendSitemap', function (Sitemap &$sitemap) {
 Event::listen('seo.blogPostModel', fn () => \Acme\Blog\Models\Post::class);
 ```
 
+Add the address as a `DescribedUrl` to give llms.txt and llms-full.txt its title, description and body (Markdown,
+read only when llms-full.txt is written). A plain `Url` is listed by its address alone.
+
+```php
+use Renatio\SeoManager\Classes\DescribedUrl;
+
+$sitemap->add(DescribedUrl::create($url)->describe($product->name, $product->summary, fn () => $product->description));
+```
+
 ## llms.txt and llms-full.txt
 
 Enable them on the **llms.txt** settings tab. `/llms.txt` ([llmstxt.org](https://llmstxt.org)) is built from the site
@@ -650,7 +659,7 @@ Forged, not cast.
 
 A Tailor entry publishes only the fields marked `llms: true` in its blueprint (or its `groups:`), of type `markdown`,
 `textarea`, `text` or `richeditor`; other pages without readable body (CMS pages, static pages, page finder records)
-get their heading, address and description. Blog posts are published in full.
+get their heading, address and description, in the language of each site. Blog posts are published in full.
 
 ```yaml
 fields:
